@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>管理书籍</title>
+  <link rel="stylesheet" type="text/css" href="/static/listable.css">
+</head>
+<body>
+<table class="listtable">
+  <tr class="listtable">
+    <th class="listtable">编号</th>
+    <th class="listtable">书名</th>
+    <th class="listtable">借阅学生</th>
+    <th class="listtable">操作</th>
+  </tr>
+  {{range .}}
+  <tr>
+    <td class="listtable">{{.Id}}</td>
+    <td class="listtable">{{.Name}}</td>
+    <td class="listtable">{{.Student}}</td>
+    <td class="listtable"><a href="{{.OptionURL}}">{{.OptionName}}</a></td>
+  </tr>
+  {{end}}
+</table>
+</body>
+</html>

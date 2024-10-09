@@ -13,7 +13,10 @@ import (
 	"fmt"
 	"github.com/flowerinsnowdh-go-study/librarysystem/dao"
 	"github.com/flowerinsnowdh-go-study/librarysystem/object"
-	_ "github.com/mattn/go-sqlite3"
+    "github.com/flowerinsnowdh-go-study/librarysystem/page"
+    _ "github.com/mattn/go-sqlite3"
+	"html/template"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -33,7 +36,9 @@ func main() {
 		shouldInit = true
 	}
 
-	db, err := sql.Open("sqlite3", dbFile)
+	var db *sql.DB
+	var err error
+	db, err = sql.Open("sqlite3", dbFile)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "failed to open database file", dbFile)
 		_, _ = fmt.Fprintln(os.Stderr, err.Error())
@@ -54,6 +59,54 @@ func main() {
 			_, _ = db.Exec(string(bytes))
 		}
 	}
+
+	//var mux *http.ServeMux = http.NewServeMux()
+
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.ServeFile(w, r, "resources/index.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	})
+	http.HandleFunc("/liststudents", func(w http.ResponseWriter, r *http.Request) {
+		var t *template.Template
+		var err error
+		if t, err = template.ParseFiles("resources/liststudents.html"); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+        var rows = page.LoadNewStudents(library)
+		if err = t.Execute(w, rows); err != nil {
+            w.WriteHeader(http.StatusInternalServerError)
+            return
+        }
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	})
+	http.HandleFunc("/listbooks", func(w http.ResponseWriter, r *http.Request) {
+		var t *template.Template
+		var err error
+		if t, err = template.ParseFiles("resources/listbooks.html"); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var rows = page.LoadNewBooks(library)
+		if err = t.Execute(w, rows); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	})
+
+	go func() {
+		if err = http.ListenAndServe("[::1]:8080", nil); err != nil {
+			panic(err)
+		}
+	}()
 
 	printHelp()
 
